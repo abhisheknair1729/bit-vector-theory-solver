@@ -1,5 +1,7 @@
 import sys
 from data_structs import Op
+import os
+from data_structs import Result
 
 def cnf_to_dimacs(cnf:list, dimacs_file:str):
     num_clauses = len(cnf)
@@ -105,4 +107,50 @@ def convert_to_op(op_str):
         return Op.SIGN_EXT
 
     sys.exit("Operation not supported!")
-    
+
+def run_cadical(output_file):
+    os.system("./cadical {} > output.result".format(output_file))
+    with open("output.result", "r") as f:
+        result_data = f.read()
+        if "UNSATISFIABLE" in result_data:
+            return (Result.UNSAT, None)
+        elif "SATISFIABLE" in result_data:
+            
+            f.seek(0)
+            result_lines = f.readlines()
+            assignment = {}
+            for line in result_lines:
+                if line[0] == "v":
+                    lits = line.split()[1:]
+                    for lit in lits:
+                        l = int(lit)
+                        if l>0:
+                            assignment[l] = True
+                        elif l<0:
+                            assignment[-l] = False
+                        elif l==0:
+                            break
+            return (Result.SAT, assignment)
+        elif "UNKNOWN" in result_data:
+            return (Result.UNKNOWN, None)
+
+def satisfied(assignment, constraint, var_dict):
+    lits = constraint.split(",")
+    for lit in lits:
+        flag = True
+        if "not" in lit:
+            lit = lit.split()[1]
+            flag = False
+        if lit in var_dict.keys():
+            lit_num = var_dict[lit]
+            
+            if assignment[lit_num] == flag:
+                return True
+        else:
+            # if current assignment doesn't assign any truth value to a variable
+            # assume that variable is not satisfied
+            continue
+  
+    return False
+
+

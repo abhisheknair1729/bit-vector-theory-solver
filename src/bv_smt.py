@@ -4,6 +4,7 @@ from data_structs import Op
 from data_structs import Node
 from data_structs import Result
 from helper import cnf_to_dimacs, tokenize, paran_split, convert_to_op
+from helper import satisfied, run_cadical
 
 def preprocess(input_smt):
     '''Removes whitespace, comments and tokenizes input'''
@@ -133,51 +134,6 @@ def process(smt_form, smt_tokens, optimization=False):
                                    + formula[e_idx:]
             node = create_node(formula, optimization=optimization)
 
-def run_cadical(output_file):
-    os.system("./cadical {} > output.result".format(output_file))
-    with open("output.result", "r") as f:
-        result_data = f.read()
-        if "UNSATISFIABLE" in result_data:
-            return (Result.UNSAT, None)
-        elif "SATISFIABLE" in result_data:
-            
-            f.seek(0)
-            result_lines = f.readlines()
-            assignment = {}
-            for line in result_lines:
-                if line[0] == "v":
-                    lits = line.split()[1:]
-                    for lit in lits:
-                        l = int(lit)
-                        if l>0:
-                            assignment[l] = True
-                        elif l<0:
-                            assignment[-l] = False
-                        elif l==0:
-                            break
-            return (Result.SAT, assignment)
-        elif "UNKNOWN" in result_data:
-            return (Result.UNKNOWN, None)
-
-def satisfied(assignment, constraint, var_dict):
-    lits = constraint.split(",")
-    for lit in lits:
-        flag = True
-        if "not" in lit:
-            lit = lit.split()[1]
-            flag = False
-        if lit in var_dict.keys():
-            lit_num = var_dict[lit]
-            
-            if assignment[lit_num] == flag:
-                return True
-        else:
-            # if current assignment doesn't assign any truth value to a variable
-            # assume that variable is not satisfied
-            continue
-  
-    return False
-
 def main():
 
     if len(sys.argv) != 3:
@@ -192,7 +148,7 @@ def main():
         opt_flag = True
     else:
         opt_flag = False
-
+    
     input_smt = []
     with open(input_filename, "r") as f:
         input_smt = f.readlines()
@@ -233,7 +189,6 @@ def main():
         if not Node.exp_constraints:
             break
     
-    print(len(Node.constraints))
     print("Result: {}".format(result))
 
 if __name__ == "__main__":

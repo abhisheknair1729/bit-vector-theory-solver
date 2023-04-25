@@ -1,4 +1,4 @@
-# bit-vector-theory-solver
+# Bit-Vector-Theory-Solver
 
 This repository contains code for final project of CS257: Introduction to Automated Reasoning at Stanford University. I have implemented 
 an SMT solver for the Quantifier-Free fragment of the Theory of Bit Vectors. 
